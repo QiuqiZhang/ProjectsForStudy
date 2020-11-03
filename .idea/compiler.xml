@@ -6,8 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="ProjectsForStudy" />
+        <module name="WebSocketClient" />
+        <module name="WebSocketServer" />
+        <module name="data-structure" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="ChatRoom" target="1.5" />
+    </bytecodeTargetLevel>
   </component>
 </project>
