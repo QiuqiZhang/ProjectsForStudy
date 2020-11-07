@@ -12,6 +12,7 @@
     <modules>
         <module>ChatRoom</module>
         <module>data-structure</module>
+        <module>ProxyServer</module>
     </modules>
 
     <dependencies>
