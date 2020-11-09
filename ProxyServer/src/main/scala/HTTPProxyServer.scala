@@ -1,6 +1,6 @@
 package proxyserver
 
-import java.io.{BufferedReader, InputStream, InputStreamReader, OutputStream}
+import java.io.{BufferedReader, BufferedWriter, File, FileWriter, InputStream, InputStreamReader, OutputStream}
 import java.net.{ServerSocket, Socket}
 
 import util.control.Breaks._
@@ -33,15 +33,13 @@ class ProxyThread(srcSocket: Socket) extends Thread {
       val srcInputReader =  new BufferedReader(new InputStreamReader(srcInput))
       val header = new StringBuilder()
       var hostLine: String = null
-      var line = srcInputReader.readLine()
-      breakable {
-        while (line != null) {
-          header.append(line)
-          if (line.toLowerCase.contains("host")) {
-            hostLine = line
-            break
-          }
-          line = srcInputReader.readLine()
+      var hasReadHost = false
+      while (srcInputReader.ready()) {
+        val line = srcInputReader.readLine()
+        header.append(line+"\r\n")
+        if (!hasReadHost && line.toLowerCase.contains("host")) {
+          hostLine = line
+          hasReadHost = true
         }
       }
       val dstInfo = hostLine.split(" ")(1).split(":")
@@ -55,26 +53,22 @@ class ProxyThread(srcSocket: Socket) extends Thread {
 
       // send request to the destination server
       dstOutput.write(header.toString().getBytes())
-      new RequestSenderThread(srcInput, dstOutput).start() // send the rest of request in a new thread
 
       // send response to client
-      while (true) {
-        srcOutput.write(dstInput.read())
+      srcOutput = srcSocket.getOutputStream()
+      breakable {
+        while (true) {
+          val ch = dstInput.read()
+          if (ch < 0) break() // InputStream.read(): If no byte is available because the end of the stream has been reached, the value -1 is returned.
+          srcOutput.write(ch)
+        }
       }
     } catch {
-      case ex: Exception => println(ex)
+      case ex: Exception => println("ProxyThread: "+ex)
     } finally {
       if (null != dstSocket) dstSocket.close() // will also close the socket's InputStream and OutputStream.
       if (null != srcInput) srcInput.close()
       if (null != srcOutput) srcOutput.close()
-    }
-  }
-}
-
-class RequestSenderThread(in: InputStream, out: OutputStream) extends Thread {
-  override def run {
-    while (true) {
-      out.write(in.read())
     }
   }
 }
